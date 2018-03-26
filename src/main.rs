@@ -1,15 +1,13 @@
+#![recursion_limit = "128"]
 
-#![recursion_limit="128"]
-
+extern crate rand;
 #[macro_use]
 extern crate yew;
-extern crate rand;
 
 use yew::html::*;
 use std::iter;
 
-struct Context {
-}
+struct Context {}
 
 struct Model {
     dim: usize,
@@ -23,13 +21,13 @@ enum Msg {
 
 fn update(_context: &mut Context, model: &mut Model, msg: Msg) {
     match msg {
-        Msg::Step => {},
+        Msg::Step => {}
         Msg::Incr => {
             model.dim += 1;
-        },
+        }
         Msg::Decr => {
             model.dim -= 1;
-        },
+        }
     };
 }
 
@@ -41,7 +39,7 @@ fn view(model: &Model) -> Html<Msg> {
                     <div class="container",>
                         <h1 class="title",>{ "Conway's Game of Life" }</h1>
                     </div>
-                </section> 
+                </section>
             </header>
             <section class="section",>
                 <div class="container",>
@@ -87,11 +85,8 @@ fn view_cell(_idx: usize) -> Html<Msg> {
 fn main() {
     yew::initialize();
     let mut app = App::new();
-    let context = Context {
-    };
-    let model = Model {
-        dim: 20
-    };
+    let context = Context {};
+    let model = Model { dim: 20 };
     app.mount(context, model, update, view);
     yew::run_loop();
 }
