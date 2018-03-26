@@ -1,0 +1,8 @@
+
+runs out of memory >dim=84
+hook in actual life logic!
+
+would be very nice:
+    faster compiles
+    hot reload
+    html! to statically check xml validity eg <p></div>
