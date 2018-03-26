@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use std::usize::MAX;
@@ -8,67 +8,62 @@ use std::ops::Range;
 
 // INTERACTIVE PARAMS
 // slow
-//const VIEWSIZE       : usize    = 20   ;
-//const DURATION       : u64      = 2000 ;
+const VIEWSIZE: usize = 20;
+const DURATION: u64 = 2000;
 
 // med
-const VIEWSIZE       : usize    = 100   ;
-const DURATION       : u64      = 100   ;
+//const VIEWSIZE       : usize    = 100   ;
+//const DURATION       : u64      = 100   ;
 
 // fast
 //const VIEWSIZE         : usize    = 200   ;
 //const DURATION         : u64      = 10    ;
 
 // benchmarking params
-const CYCLES           : usize = 1000 ;
+const CYCLES: usize = 1000;
 
 // Game Of Life definitions
-const CELL              : char      = 'O'   ;
-const SPAWN             : u8        = 3     ;
-const LIVING_CONDITIONS : Range<u8> = (2..4);
+const CELL: char = 'O';
+const SPAWN: u8 = 3;
+const LIVING_CONDITIONS: Range<u8> = (2..4);
 
 type Board = HashSet<(usize, usize)>;
 type Abacus = HashMap<(usize, usize), u8>;
 
-// VIEWING WINDOW CALC 
-const DIM : usize = MAX;
+// VIEWING WINDOW CALC
+const DIM: usize = MAX;
 const OFFSET: usize = DIM / 2;
-const VIEW: Range<usize> = (OFFSET-VIEWSIZE/2..1+OFFSET+VIEWSIZE/2);
+const VIEW: Range<usize> = (OFFSET - VIEWSIZE / 2..1 + OFFSET + VIEWSIZE / 2);
 
 fn setup() -> Board {
     let seed = [
-        [0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,1,0,0,0,0,0,0],
-        [0,0,0,0,0,1,0,0,0,0],
-        [0,0,1,1,0,0,1,1,1,0],
-        [0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 1, 1, 0, 0, 1, 1, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
     let mut board = Board::new();
     for (i, row) in seed.iter().enumerate() {
         for (j, cell) in row.iter().enumerate() {
             if *cell == 1 {
-                board.insert((i+OFFSET, j+OFFSET));
+                board.insert((i + OFFSET, j + OFFSET));
             }
         }
     }
     return board;
 }
 
-fn main() {
-    benchmark();
-    //interactive();
-}
-
 fn benchmark() {
     size_after_iterations(CYCLES);
 }
 
-fn interactive() {
+pub fn serve() {
     let mut board = setup();
 
     for i in 0.. {
@@ -99,9 +94,9 @@ fn next_generation(board: &Board) -> Board {
     let mut next = Board::new();
     let mut scratchpad = Abacus::new();
     for &(row, col) in board {
-        for rdx in row-1..row+2 {
-            for cdx in col-1..col+2 {
-                if ! (rdx == row && cdx == col) {
+        for rdx in row - 1..row + 2 {
+            for cdx in col - 1..col + 2 {
+                if !(rdx == row && cdx == col) {
                     let neighbor_idx = (rdx, cdx);
                     let value = scratchpad.entry(neighbor_idx).or_insert(0);
                     *value += 1;
@@ -111,7 +106,7 @@ fn next_generation(board: &Board) -> Board {
     }
     for (&idx, density) in &scratchpad {
         let living = board.contains(&idx);
-        if will_have_life(living, *density)  {
+        if will_have_life(living, *density) {
             next.insert(idx);
         }
     }
@@ -121,10 +116,10 @@ fn next_generation(board: &Board) -> Board {
 fn will_have_life(living: bool, density: u8) -> bool {
     return if living {
         density >= LIVING_CONDITIONS.start && density < LIVING_CONDITIONS.end
-        //LIVING_CONDITIONS.contains(density) // unstable feature
+    //LIVING_CONDITIONS.contains(density) // unstable feature
     } else {
         density == SPAWN
-    }
+    };
 }
 
 fn draw_line() {
