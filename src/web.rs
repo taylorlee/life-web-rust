@@ -29,6 +29,7 @@ struct Context {
 }
 
 const DIM: usize = 10;
+const OFF: usize = 1000;
 const FLICK: u64 = 100;
 
 fn update(context: &mut Context, model: &mut Model, msg: Msg) {
@@ -44,7 +45,7 @@ fn update(context: &mut Context, model: &mut Model, msg: Msg) {
             model.job = None;
         },
         Msg::Reset => {
-            model.board = setup();
+            model.board = setup(OFF);
             model.clock = 0;
         },
         Msg::Step => {
