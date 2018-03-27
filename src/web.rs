@@ -10,9 +10,10 @@ use game::*;
 
 struct Model {
     board: Board,
-    clock: usize,
-    dim: usize,
+    clock: u64,
+    speed: u64,
     job: Option<Box<Task>>,
+    running: bool,
 }
 
 enum Msg {
@@ -28,74 +29,124 @@ struct Context {
     interval: IntervalService<Msg>,
 }
 
-const DIM: usize = 10;
-const OFF: usize = 1000;
-const FLICK: u64 = 100;
+const LEN: usize = 40;
+const DIM: usize = LEN*2;
+
+type Row = [bool; DIM];
+type Grid = [Row; DIM];
+
+fn new_grid() -> Grid {
+    [[false; DIM]; DIM]
+}
+
+fn gtimeout(speed: u64) -> u64 {
+    500 - 50*speed
+}
+fn do_start(context: &mut Context, model: &mut Model) {
+    let handle = context.interval.spawn(Duration::from_millis(gtimeout(model.speed)), || Msg::Step);
+    model.job = Some(Box::new(handle));
+    model.running = true;
+}
+fn do_stop(model: &mut Model) {
+    if let Some(mut task) = model.job.take() {
+        task.cancel();
+    }
+    model.job = None;
+    model.running = false;
+}
+fn restart(context: &mut Context, model: &mut Model) {
+    do_stop(model);
+    do_start(context, model);
+}
 
 fn update(context: &mut Context, model: &mut Model, msg: Msg) {
     match msg {
         Msg::Start => {
-            let handle = context.interval.spawn(Duration::from_millis(FLICK), || Msg::Step);
-            model.job = Some(Box::new(handle));
-        },
+            do_start(context, model);
+        }
         Msg::Stop => {
-            if let Some(mut task) = model.job.take() {
-                task.cancel();
-            }
-            model.job = None;
-        },
+            do_stop(model);
+        }
         Msg::Reset => {
-            model.board = setup(OFF);
+            model.board = setup();
             model.clock = 0;
-        },
+        }
         Msg::Step => {
             model.clock += 1;
             model.board = next_generation(&model.board);
         }
         Msg::Incr => {
-            model.dim += 1;
+            if model.speed < 10 {
+                model.speed += 1;
+            }
+            if model.running {
+                restart(context, model);
+            }
         }
         Msg::Decr => {
-            model.dim -= 1;
+            if model.speed > 0 {
+                model.speed -= 1;
+            }
+            if model.running {
+                restart(context, model);
+            }
         }
     };
 }
 
-fn view(model: &Model) -> Html<Msg> {
-    let mut rows = [[false; DIM]; DIM];
+fn board2grid(board: &Board) -> Grid {
+    let mut rows = new_grid();
     for rdx in 0..DIM {
         for cdx in 0..DIM {
-            if model.board.contains(&(rdx as isize, cdx as isize)) {
-                rows[rdx][cdx] = true;
-            }
+            let x = rdx as isize - LEN as isize;
+            let y = cdx as isize - LEN as isize;
+            rows[rdx][cdx] = board_slice(&board, x, y);
         }
     }
+    return rows;
+}
 
+fn view(model: &Model) -> Html<Msg> {
+    let rows = board2grid(&model.board);
     html! {
         <div>
-            <header class="app-header",>
-                <section class="section",>
-                    <div class="container",>
-                        <h1 class="title",>{ "Conway's Game of Life" }</h1>
-                    </div>
-                </section>
-            </header>
             <section class="section",>
                 <div class="container",>
                     <div class="level",>
                         <div class="level-item",>
-                            <button class="button", onclick=|_| Msg::Step,>{ "Next Generation" }</button>
-                            <button class="game-button", onclick=move|_| Msg::Start,>{ "Start" }</button>
-                            <button class="game-button", onclick=move|_| Msg::Stop,>{ "Stop" }</button>
-                            <button class="game-button", onclick=move|_| Msg::Reset,>{ "Reset" }</button>
-                            <button class="button",  onclick=|_| Msg::Incr,>{ "Zoom In" }</button>
-                            <button class="button", onclick=|_| Msg::Decr,>{ "Zoom Out" }</button>
-                            <span class="tag",> {"CLOCK"} { model.clock } </span>
+                            <h1 class="title",>{ "Game of Life" }</h1>
                         </div>
                     </div>
                 </div>
-            </section>
-            <section class="section",>
+                <div class="level",></div>
+                <div class="container",>
+                    <div class="level",>
+                        <div class="level-item",>
+                            <div class=("tags","has-addons"),>
+                              <span class="tag",> {"Generation #"}</span>
+                              <span class=("tag","is-primary"),> { model.clock } </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level",>
+                        { if model.running { show_pause() } else { show_start() } }
+                    </div>
+                    <div class="level",>
+                        <div class="level-item",>
+                            <div class=("tags","has-addons"),>
+                              <span class="tag",> {"SPEED"} </span>
+                              <span class=("tag","is-primary"),> { model.speed} </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level",>
+                        <div class="level-item",>
+                            <button class="button", onclick=|_| Msg::Decr,>{ "Slow Down" }</button>
+                            <button class="button",  onclick=|_| Msg::Incr,>{ "Speed Up" }</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="level",></div>
                 <div class="container",>
                     <div class="level",>
                         <div class="level-item",>
@@ -110,7 +161,24 @@ fn view(model: &Model) -> Html<Msg> {
     }
 }
 
-fn view_row(cells: &[bool; DIM]) -> Html<Msg> {
+fn show_start() -> Html<Msg> {
+    html! {
+        <div class="level-item",>
+            <button class="button", onclick=move|_| Msg::Step,>{ "Step" }</button>
+            <button class="button", onclick=move|_| Msg::Start,>{ "Start" }</button>
+            <button class="button", onclick=move|_| Msg::Reset,>{ "Reset" }</button>
+        </div>
+    }
+}
+fn show_pause() -> Html<Msg> {
+    html! {
+        <div class="level-item",>
+            <button class="button", onclick=move|_| Msg::Stop,>{ "Pause" }</button>
+        </div>
+    }
+}
+
+fn view_row(cells: &Row) -> Html<Msg> {
     html! {
         <tr class="row",>
             { for cells.iter().map(view_cell) }
@@ -131,9 +199,10 @@ pub fn serve() {
     };
     let model = Model {
         board: setup(),
-        dim: 20,
+        speed: 5,
         clock: 0,
         job: None,
+        running: false,
     };
     app.mount(context, model, update, view);
     yew::run_loop();

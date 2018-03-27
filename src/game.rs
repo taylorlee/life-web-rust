@@ -1,12 +1,16 @@
 use std::collections::{HashMap, HashSet};
 use std::ops::Range;
+use std::usize::MAX;
 
 // Game Of Life definitions
 const SPAWN: u8 = 3;
 const LIVING_CONDITIONS: Range<u8> = (2..4);
 
-pub type Board = HashSet<(isize, isize)>;
-type Abacus = HashMap<(isize, isize), u8>;
+pub type Idx = (usize, usize);
+pub type Board = HashSet<Idx>;
+type Abacus = HashMap<Idx, u8>;
+
+const OFF: usize = MAX / 4;
 
 pub fn setup() -> Board {
     let seed = [
@@ -25,11 +29,16 @@ pub fn setup() -> Board {
     for (i, row) in seed.iter().enumerate() {
         for (j, cell) in row.iter().enumerate() {
             if *cell == 1 {
-                board.insert((i as isize, j as isize));
+                board.insert((i + OFF, j + OFF));
             }
         }
     }
     return board;
+}
+pub fn board_slice(board: &Board, x: isize, y: isize) -> bool {
+    let rdx = (x + OFF as isize) as usize;
+    let cdx = (y + OFF as isize) as usize;
+    return board.contains(&(rdx, cdx));
 }
 
 pub fn next_generation(board: &Board) -> Board {
