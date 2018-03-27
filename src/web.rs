@@ -1,38 +1,54 @@
-use yew::html::*;
-//use std::iter;
-use game::*;
+
+use std::time::Duration;
+
 use yew;
+use yew::html::*;
+use yew::services::interval::IntervalService;
+use yew::services::Task;
 
-pub fn serve() {
-    yew::initialize();
-    let mut app = App::new();
-    let context = Context {};
-    let model = Model { 
-        board: setup(),
-        dim: 20,
-    };
-    app.mount(context, model, update, view);
-    yew::run_loop();
-}
-
-struct Context {}
+use game::*;
 
 struct Model {
     board: Board,
+    clock: usize,
     dim: usize,
+    job: Option<Box<Task>>,
 }
 
 enum Msg {
     Step,
     Incr,
     Decr,
+    Start,
+    Stop,
+    Reset,
 }
 
-const DIM: usize = 50;
+struct Context {
+    interval: IntervalService<Msg>,
+}
 
-fn update(_context: &mut Context, model: &mut Model, msg: Msg) {
+const DIM: usize = 10;
+const FLICK: u64 = 100;
+
+fn update(context: &mut Context, model: &mut Model, msg: Msg) {
     match msg {
+        Msg::Start => {
+            let handle = context.interval.spawn(Duration::from_millis(FLICK), || Msg::Step);
+            model.job = Some(Box::new(handle));
+        },
+        Msg::Stop => {
+            if let Some(mut task) = model.job.take() {
+                task.cancel();
+            }
+            model.job = None;
+        },
+        Msg::Reset => {
+            model.board = setup();
+            model.clock = 0;
+        },
         Msg::Step => {
+            model.clock += 1;
             model.board = next_generation(&model.board);
         }
         Msg::Incr => {
@@ -68,9 +84,12 @@ fn view(model: &Model) -> Html<Msg> {
                     <div class="level",>
                         <div class="level-item",>
                             <button class="button", onclick=|_| Msg::Step,>{ "Next Generation" }</button>
+                            <button class="game-button", onclick=move|_| Msg::Start,>{ "Start" }</button>
+                            <button class="game-button", onclick=move|_| Msg::Stop,>{ "Stop" }</button>
+                            <button class="game-button", onclick=move|_| Msg::Reset,>{ "Reset" }</button>
                             <button class="button",  onclick=|_| Msg::Incr,>{ "Zoom In" }</button>
-                            <span class="tag",> { model.dim } </span>
                             <button class="button", onclick=|_| Msg::Decr,>{ "Zoom Out" }</button>
+                            <span class="tag",> {"CLOCK"} { model.clock } </span>
                         </div>
                     </div>
                 </div>
@@ -103,4 +122,18 @@ fn view_cell(living: &bool) -> Html<Msg> {
         <td class=("cell", if *living { "living" } else { "dead" } ),</td>
     }
 }
-
+pub fn serve() {
+    yew::initialize();
+    let mut app = App::new();
+    let context = Context {
+        interval: IntervalService::new(app.sender()),
+    };
+    let model = Model {
+        board: setup(),
+        dim: 20,
+        clock: 0,
+        job: None,
+    };
+    app.mount(context, model, update, view);
+    yew::run_loop();
+}
