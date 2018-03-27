@@ -1,15 +1,24 @@
-#![recursion_limit = "128"]
-
-extern crate rand;
-#[macro_use]
-extern crate yew;
-
 use yew::html::*;
-use std::iter;
+//use std::iter;
+use game::*;
+use yew;
+
+pub fn serve() {
+    yew::initialize();
+    let mut app = App::new();
+    let context = Context {};
+    let model = Model { 
+        board: setup(),
+        dim: 20,
+    };
+    app.mount(context, model, update, view);
+    yew::run_loop();
+}
 
 struct Context {}
 
 struct Model {
+    board: Board,
     dim: usize,
 }
 
@@ -19,9 +28,13 @@ enum Msg {
     Decr,
 }
 
+const DIM: usize = 50;
+
 fn update(_context: &mut Context, model: &mut Model, msg: Msg) {
     match msg {
-        Msg::Step => {}
+        Msg::Step => {
+            model.board = next_generation(&model.board);
+        }
         Msg::Incr => {
             model.dim += 1;
         }
@@ -32,6 +45,15 @@ fn update(_context: &mut Context, model: &mut Model, msg: Msg) {
 }
 
 fn view(model: &Model) -> Html<Msg> {
+    let mut rows = [[false; DIM]; DIM];
+    for rdx in 0..DIM {
+        for cdx in 0..DIM {
+            if model.board.contains(&(rdx as isize, cdx as isize)) {
+                rows[rdx][cdx] = true;
+            }
+        }
+    }
+
     html! {
         <div>
             <header class="app-header",>
@@ -58,7 +80,7 @@ fn view(model: &Model) -> Html<Msg> {
                     <div class="level",>
                         <div class="level-item",>
                             <table class="grid",>
-                                { for (0..model.dim).zip(iter::repeat(model.dim)).map(view_row) }
+                                { for rows.iter().map(view_row)  }
                             </table>
                         </div>
                     </div>
@@ -68,25 +90,17 @@ fn view(model: &Model) -> Html<Msg> {
     }
 }
 
-fn view_row((_idx, dim): (usize, usize)) -> Html<Msg> {
+fn view_row(cells: &[bool; DIM]) -> Html<Msg> {
     html! {
         <tr class="row",>
-            { for (0..dim).map(view_cell) }
+            { for cells.iter().map(view_cell) }
         </tr>
     }
 }
 
-fn view_cell(_idx: usize) -> Html<Msg> {
+fn view_cell(living: &bool) -> Html<Msg> {
     html! {
-        <td class=("cell", if rand::random() { "living" } else { "dead" } ),</td>
+        <td class=("cell", if *living { "living" } else { "dead" } ),</td>
     }
 }
 
-fn main() {
-    yew::initialize();
-    let mut app = App::new();
-    let context = Context {};
-    let model = Model { dim: 20 };
-    app.mount(context, model, update, view);
-    yew::run_loop();
-}

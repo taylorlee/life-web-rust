@@ -1,5 +1,12 @@
-mod txt;
+#![recursion_limit = "128"]
+
+mod game;
+mod web;
+
+extern crate rand;
+#[macro_use]
+extern crate yew;
 
 fn main() {
-    txt::serve();
+    web::serve();
 }
