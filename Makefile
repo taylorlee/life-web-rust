@@ -2,8 +2,5 @@
 debug: src/main.rs
 	cargo run
 
-release: src/main.rs
+asm: src/main.rs
 	cargo web deploy --release
-
-test:
-	cargo test --release

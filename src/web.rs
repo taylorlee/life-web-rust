@@ -11,7 +11,7 @@ use game::*;
 struct Model {
     board: Board,
     clock: u64,
-    speed: u64,
+    speed: u8,
     job: Option<Box<Task>>,
     running: bool,
 }
@@ -29,7 +29,7 @@ struct Context {
     interval: IntervalService<Msg>,
 }
 
-const LEN: usize = 40;
+const LEN: usize = 50;
 const DIM: usize = LEN*2;
 
 type Row = [bool; DIM];
@@ -39,14 +39,16 @@ fn new_grid() -> Grid {
     [[false; DIM]; DIM]
 }
 
-fn gtimeout(speed: u64) -> u64 {
-    500 - 50*speed
+fn cycle_time(speed: u8) -> Duration {
+    Duration::from_millis(500 - 50 * speed as u64)
 }
+
 fn do_start(context: &mut Context, model: &mut Model) {
-    let handle = context.interval.spawn(Duration::from_millis(gtimeout(model.speed)), || Msg::Step);
+    let handle = context.interval.spawn(cycle_time(model.speed), || Msg::Step);
     model.job = Some(Box::new(handle));
     model.running = true;
 }
+
 fn do_stop(model: &mut Model) {
     if let Some(mut task) = model.job.take() {
         task.cancel();
@@ -54,6 +56,7 @@ fn do_stop(model: &mut Model) {
     model.job = None;
     model.running = false;
 }
+
 fn restart(context: &mut Context, model: &mut Model) {
     do_stop(model);
     do_start(context, model);
@@ -191,6 +194,7 @@ fn view_cell(living: &bool) -> Html<Msg> {
         <td class=("cell", if *living { "living" } else { "dead" } ),</td>
     }
 }
+
 pub fn serve() {
     yew::initialize();
     let mut app = App::new();

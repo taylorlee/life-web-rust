@@ -1,6 +1,9 @@
 
-runs out of memory >dim=84
-hook in actual life logic!
+runs out of memory >dim=50
+    only in asm.js
+    can I pass emscripten arg?
+
+wasm slower than asm
 
 would be very nice:
     faster compiles
