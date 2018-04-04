@@ -3,17 +3,19 @@
 }
 
 .row {
+
 }
 
 .cell {
     height: 8px;
     width: 8px;
+    border-radius: 5px;
 }
 
 .dead {
     background-color: white;
 }
 
-.living {
-    background-color: black ;
+.alive {
+    background-color: black;
 }
