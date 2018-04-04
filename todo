@@ -1,7 +1,4 @@
 
-wasm slower than asm
-    does llvm6 help?
-
 would be very nice:
     faster compiles
     hot reload
