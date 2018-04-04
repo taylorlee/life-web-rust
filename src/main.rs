@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "256"] // needed for html! macro expansion
 
 mod game;
 mod model;
