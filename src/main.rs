@@ -5,7 +5,6 @@ mod model;
 mod actions;
 mod view;
 
-extern crate rand;
 #[macro_use]
 extern crate yew;
 

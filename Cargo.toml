@@ -5,4 +5,3 @@ authors = ["taylor <tay333@gmail.com>"]
 
 [dependencies]
 yew = "0.2.0" 
-rand = "0.4.1"

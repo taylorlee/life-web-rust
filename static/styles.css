@@ -7,9 +7,9 @@
 }
 
 .cell {
-    height: 4px;
-    width: 4px;
-    border-radius: 2px;
+    height: 6px;
+    width: 6px;
+    border-radius: 3px;
 }
 
 .dead {
